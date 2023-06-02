@@ -1,0 +1,12 @@
+version: "3.9"
+services:
+  web:
+    container_name: "beer"
+    restart: unless-stopped
+    volumes:
+      - ./index.js:/home/node/app/index.js
+      - ./api:/home/node/app/api
+      - ./web/build:/home/node/app/web/build
+    build: .
+    ports:
+      - "3000:3000"

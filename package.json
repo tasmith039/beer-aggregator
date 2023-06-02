@@ -1,0 +1,27 @@
+{
+  "name": "beer-aggregator",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node index.js ",
+    "clean": "npx prettier --write .",
+    "dev": "nodemon app.js --ignore ./web/ --ignore ./api/generated/ --ignore ./api/downloads --ignore ./api/node_modules"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cheerio": "^1.0.0-rc.12",
+    "cors": "^2.8.5",
+    "express": "^4.18.2",
+    "node-cron": "^3.0.2",
+    "nodemon": "^2.0.22",
+    "pdf2json": "^2.0.2",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "prettier": "2.8.8"
+  }
+}
