@@ -3,7 +3,7 @@ import cron from 'node-cron'
 import cors from 'cors'
 import path from 'path'
 import fs from 'fs'
-import { fetchSuperioBeers, getAllBeers, generateBeers, mergeAllFiles } from './api/apiHelper.js'
+import { fetchSuperioBeers, getAllBeers, generateBeers, mergeAllFiles, getCavalier } from './api/apiHelper.js'
 import { cronService } from './api/cronHelper.js'
 const PORT = process.env.PORT || 3000;
 const FILENAME = './api/generated/all.json'
@@ -24,6 +24,7 @@ app.set('json spaces', 2)
 app.get('/merge', mergeAllFiles)
 app.get('/getAllBeers', generateBeers)
 app.get('/getsuperior', fetchSuperioBeers)
+app.get('/getCavalier', getCavalier)
 app.get('/all', cors(corsOptions), getAllBeers)
 
 app.get('/', (req, res) => {

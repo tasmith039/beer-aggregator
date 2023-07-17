@@ -36,48 +36,60 @@ const downloadLaRosePDF = async () => {
 
 
 }
-const downloadSuperior = async () => {
-    return await fetch('https://www.superiorbeveragegroup.com/assets/json/keg-pricing.php', {
-        headers: {
-            accept: 'application/json, text/javascript, */*; q=0.01',
-            'content-type': 'application/x-www-form-urlencoded; charset=UTF-8',
-        },
 
-        body: 'action=get-keg-table-data&location=cleveland&tablesize=desktop&county=summit',
-        method: 'POST',
-    })
-        .then(res => res.json())
-        .then(res => res.filter(item => item.at(7)))
-        .then(res => res.filter(item => testRegex(item.at(0))))
-        .then(res =>
-            res.map(i => {
-                return {
-                    name: useRegex(i?.at(0))?.at(1),
-                    type: i?.at(1),
-                    abv: i?.at(2),
-                    sku: null,
-                    "hash": crypto.createHash('md5').update(useRegex(i?.at(0))?.at(1)).digest("hex"),
-                    location: "superior",
-                    price: Number(i?.at(7).replace("$", "")),
-                }
+const fetchSuperioBeers = async (req, res) => {
+    const data = await downloadSuperior()
+    res.send(data)
+}
+
+const downloadSuperior = async () => {
+    try {
+        const heidelbergList = await fetch('https://superiorbeveragegroup.com/resources/keg-sales/northeast-ohio/summit/')
+            .then(res => res.text())
+            .catch(err => {
+                console.log('error occured', err)
             })
+
+        const $ = cheerio.load(heidelbergList);
+        const kegListTable = $('#keg_pricing_table');
+        if (kegListTable.length === 0) return {}
+
+        const kegList = [];
+        kegListTable.find('tbody tr').each((index, element) => {
+            const row = {};
+            $(element)
+                .find('td')
+                .each((i, el) => {
+                    row[`column${i}`] = $(el).text().trim();
+                });
+            kegList.push(row);
+        });
+
+        const kegListBeers = kegList?.filter(beer => !!beer?.column7?.length).map(beer => {
+            return {
+                "sku": null,
+                "name": beer.column0,
+                "price": Number(beer?.column7?.replace("$", "")),
+                "hash": crypto.createHash('md5').update(beer.column0).digest("hex"),
+                "abv": beer?.column2,
+                "location": "superior"
+            }
+        })
+        fs.writeFileSync(
+            `${GENERATED_PATH}/superiorbeveragegroup.json`,
+            JSON.stringify(kegListBeers, null, 2),
+            {
+                encoding: 'utf8',
+                flag: 'w',
+                mode: 0o666,
+            },
+            () => { }
         )
-        .then(res => {
-            fs.writeFileSync(
-                `${GENERATED_PATH}/superiorbeveragegroup.json`,
-                JSON.stringify(res, null, 2),
-                {
-                    encoding: 'utf8',
-                    flag: 'w',
-                    mode: 0o666,
-                },
-                () => { }
-            )
-            return res
-        })
-        .catch(err => {
-            console.log('error occured', err)
-        })
+        return kegListBeers
+    } catch (error) {
+        console.error(error);
+        return {}
+    }
 }
 
 const loadAndParseLaRosePDF = async () => {
@@ -166,10 +178,7 @@ const mergeAllFiles = (req, res) => {
     res.send(allBeers)
 }
 
-const fetchSuperioBeers = async (req, res) => {
-    const data = await downloadSuperior()
-    res.send(data)
-}
+
 
 const getAllBeers = (req, res) => {
     const allBeers = fs.readFileSync(`${GENERATED_PATH}/all.json`, 'utf8')
@@ -178,8 +187,8 @@ const getAllBeers = (req, res) => {
 
 
 const getCavalier = async (req, res) => {
-    const allCav = parseCavalier()
-    res.send(JSON.parse(allCav))
+    const allCav = await parseCavalier()
+    res.send(allCav)
 }
 const parseCavalier = async () => {
 
@@ -201,13 +210,14 @@ const parseCavalier = async () => {
         item["beers"] = jsonData.slice(item.idx + 1, endOfBeerIdx)?.map(beer => {
 
             const beerName = `${item["Product Name"]} - ${beer["Product Name"]}`
+
             // https://stackoverflow.com/a/29494612
             beerStack.push({
                 sku: null,
                 name: beerName,
                 price: Math.round(beer["Price"] * 1e2) / 1e2,
                 "hash": crypto.createHash('md5').update(beerName).digest("hex"),
-                type: item["Style"],
+                type: beer["Style"] || null,
                 abv: Math.round(beer['Alcohol By Volume'] * 100 * 1e3) / 1e3,
                 location: "cavalier",
             })
@@ -238,6 +248,7 @@ const parseCavalier = async () => {
         () => { }
     )
 
+
     return beerStack;
 }
 
@@ -245,6 +256,7 @@ const getHeidelberg = async (req, res) => {
     const hidelbergBeers = await downloadAndParseHeidelberg()
     res.send(hidelbergBeers)
 }
+
 const downloadAndParseHeidelberg = async () => {
     try {
         const heidelbergList = await fetch('https://heidelbergdistributing.com/locations/lorain/lorain-kegs/')

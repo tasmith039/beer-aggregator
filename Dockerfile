@@ -20,6 +20,8 @@ RUN npm install
 
 RUN npm run build
 
+WORKDIR /home/node/app
+
 EXPOSE 3000
 
 CMD [ "node", "index.js" ]
