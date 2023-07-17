@@ -215,7 +215,7 @@ const parseCavalier = async () => {
             beerStack.push({
                 sku: null,
                 name: beerName,
-                price: Math.round(beer["Price"] * 1e2) / 1e2,
+                price: Math.round((beer["Price"] || beer["Retail 20%"]) * 1e2) / 1e2,
                 "hash": crypto.createHash('md5').update(beerName).digest("hex"),
                 type: beer["Style"] || null,
                 abv: Math.round(beer['Alcohol By Volume'] * 100 * 1e3) / 1e3,
